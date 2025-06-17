@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Text Summarizer</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="{{ url_for('static', filename='favicon.png') }}"
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  </head>
+  <body>
+    <div class="container">
+      <h1>Text Summarizer</h1>
+      <textarea id="inputText" placeholder="Paste your text here..."></textarea>
+      <input type="file" id="fileInput" accept=".txt,.pdf" />
+      <div class="buttons">
+        <button id="summarize">Summarize</button>
+        <button id="clear">Clear</button>
+      </div>
+      <div id="output"></div>
+      <div class="history">
+        <h3>Summary History</h3>
+        <div id="historyList"></div>
+      </div>
+    </div>
+
+    <script>
+      const summarizeBtn = document.getElementById("summarize");
+      const clearBtn = document.getElementById("clear");
+      const inputText = document.getElementById("inputText");
+      const output = document.getElementById("output");
+      const fileInput = document.getElementById("fileInput");
+      const historyList = document.getElementById("historyList");
+
+      summarizeBtn.addEventListener("click", async () => {
+        const text = inputText.value;
+        if (!text.trim()) return alert("Please enter some text");
+
+        // Optional: auto language detection can be handled on the backend
+        const response = await fetch("/summarize", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text }),
+        });
+        const data = await response.json();
+        output.innerText = data.summary;
+
+        const item = document.createElement("div");
+        item.className = "history-item";
+        item.innerText = data.summary;
+        historyList.prepend(item);
+      });
+
+      clearBtn.addEventListener("click", () => {
+        inputText.value = "";
+        output.innerText = "";
+      });
+
+      fileInput.addEventListener("change", async () => {
+        const file = fileInput.files[0];
+        if (!file) return;
+        const formData = new FormData();
+        formData.append("file", file);
+
+        const response = await fetch("/upload", {
+          method: "POST",
+          body: formData,
+        });
+        const data = await response.json();
+        inputText.value = data.content;
+      });
+    </script>
+  </body>
+</html>
